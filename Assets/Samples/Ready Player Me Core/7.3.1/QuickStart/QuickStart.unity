@@ -297,6 +297,7 @@ GameObject:
   - component: {fileID: 200806133}
   - component: {fileID: 200806132}
   - component: {fileID: 200806134}
+  - component: {fileID: 200806135}
   m_Layer: 0
   m_Name: PersonalAvatarLoader
   m_TagString: Untagged
@@ -357,6 +358,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 1966681283}
   uploadButton: {fileID: 1917057088}
+--- !u!114 &200806135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200806131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 354bf7dc3dc7f0e4c9a0343058b3938a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioSource: {fileID: 1966681283}
 --- !u!1 &241121977
 GameObject:
   m_ObjectHideFlags: 0
@@ -3591,7 +3605,6 @@ GameObject:
   - component: {fileID: 1966681284}
   - component: {fileID: 1966681283}
   - component: {fileID: 1966681285}
-  - component: {fileID: 1966681286}
   m_Layer: 0
   m_Name: Lipsync
   m_TagString: Untagged
@@ -3741,22 +3754,6 @@ MonoBehaviour:
         m_CallState: 2
   outputSoundGain: 1
   audioSourceProxy: {fileID: 0}
---- !u!114 &1966681286
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1966681282}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f24f90331c09e854586fe2cd12e69544, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  index: 0
-  isAutoStart: 1
-  latencyTolerance: 0.05
-  bufferTime: 0.03
 --- !u!1 &2036169501
 GameObject:
   m_ObjectHideFlags: 0
