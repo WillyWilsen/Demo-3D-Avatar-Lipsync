@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Networking;
 using LiveKit;
 using LiveKit.Proto;
 using RoomOptions = LiveKit.RoomOptions;
@@ -7,21 +8,43 @@ using System.Collections.Generic;
 
 public class LiveKitMicrophone : MonoBehaviour
 {
+    private string token;
     public AudioSource audioSource;
-    
+    public AudioStream _audioStream;
     public Room room;
-    
     Dictionary<string, GameObject> _audioObjects = new();
+
+    [System.Serializable]
+    public class TokenResponse
+    {
+        public string token;
+    }
 
     IEnumerator Start()
     {
+        UnityWebRequest www = UnityWebRequest.Get("http://localhost:5000/getToken");
+        yield return www.SendWebRequest();
+        
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            string jsonResponse = www.downloadHandler.text;
+            TokenResponse response = JsonUtility.FromJson<TokenResponse>(jsonResponse);
+            token = response.token;
+            
+            Debug.Log("Room token fetched");
+        }
+        else
+        {
+            Debug.LogError("Error fetching token: " + www.error);
+        }
+
         room = new Room();
         room.TrackSubscribed += TrackSubscribed;
         room.TrackUnsubscribed += UnTrackSubscribed;
         RoomOptions options = new RoomOptions();
 
         Debug.Log("Connecting to room...");
-        var c = room.Connect("wss://voice-agent-claude-5sgklqv8.livekit.cloud", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibmFtZSIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoicm9vbS0zZCIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJpZGVudGl0eSIsImlzcyI6IkFQSVhxelhCRno1UEpodiIsIm5iZiI6MTczNDQ0MjM0MiwiZXhwIjoxNzM0NDYzOTQyfQ.UtK2xg2OSd0G7fngpxArPR0cT_zEnAvWvew_lOZomOI", options);
+        var c = room.Connect("wss://voice-agent-claude-5sgklqv8.livekit.cloud", token, options);
 
         yield return c;
 
@@ -73,7 +96,7 @@ public class LiveKitMicrophone : MonoBehaviour
         {
             GameObject audObject = new GameObject(audioTrack.Sid);
             var source = audObject.AddComponent<AudioSource>();
-            var stream = new AudioStream(audioTrack, source);
+            _audioStream = new AudioStream(audioTrack, source, audioSource);
             _audioObjects[audioTrack.Sid] = audObject;
         }
     }
@@ -90,6 +113,13 @@ public class LiveKitMicrophone : MonoBehaviour
                 Destroy(audObject);
             }
             _audioObjects.Remove(audioTrack.Sid);
+        }
+    }
+
+    void Update()
+    {
+        if (_audioStream != null) {
+            _audioStream.Update();
         }
     }
 }

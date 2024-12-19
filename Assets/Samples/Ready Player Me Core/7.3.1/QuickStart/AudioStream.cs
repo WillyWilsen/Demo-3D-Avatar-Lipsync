@@ -4,6 +4,7 @@ using LiveKit.Internal;
 using LiveKit.Proto;
 using System.Runtime.InteropServices;
 using LiveKit.Internal.FFIClients.Requests;
+using System.Collections.Concurrent;
 
 namespace LiveKit
 {
@@ -11,6 +12,7 @@ namespace LiveKit
     {
         internal readonly FfiHandle Handle;
         private AudioSource _audioSource;
+        private AudioSource _audioSource2;
         private AudioFilter _audioFilter;
         private RingBuffer _buffer;
         private short[] _tempBuffer;
@@ -19,7 +21,10 @@ namespace LiveKit
         private AudioResampler _resampler = new AudioResampler();
         private object _lock = new object();
 
-        public AudioStream(IAudioTrack audioTrack, AudioSource source)
+        // Queue to pass audio data to main thread
+        private ConcurrentQueue<float[]> _audioDataQueue = new ConcurrentQueue<float[]>();
+
+        public AudioStream(IAudioTrack audioTrack, AudioSource source, AudioSource source2)
         {
             if (!audioTrack.Room.TryGetTarget(out var room))
                 throw new InvalidOperationException("audiotrack's room is invalid");
@@ -37,12 +42,13 @@ namespace LiveKit
             Handle = FfiHandle.FromOwnedHandle(res.NewAudioStream.Stream.Handle);
             FfiClient.Instance.AudioStreamEventReceived += OnAudioStreamEvent;
 
-            UpdateSource(source);
+            UpdateSource(source, source2);
         }
 
-        private void UpdateSource(AudioSource source)
+        private void UpdateSource(AudioSource source, AudioSource source2)
         {
             _audioSource = source;
+            _audioSource2 = source2;
             _audioFilter = source.gameObject.AddComponent<AudioFilter>();
             //_audioFilter.hideFlags = HideFlags.HideInInspector;
             _audioFilter.AudioRead += OnAudioRead;
@@ -64,7 +70,6 @@ namespace LiveKit
                     _sampleRate = (uint)sampleRate;
                 }
 
-
                 static float S16ToFloat(short v)
                 {
                     return v / 32768f;
@@ -79,6 +84,9 @@ namespace LiveKit
                 {
                     data[i] = S16ToFloat(_tempBuffer[i]);
                 }
+
+                // Enqueue audio data for processing on the main thread
+                _audioDataQueue.Enqueue((float[])data.Clone());
             }
         }
 
@@ -107,6 +115,23 @@ namespace LiveKit
                     }
                     
                 }
+            }
+        }
+
+        // Update method called from the main thread
+        public void Update()
+        {
+            if (_audioDataQueue.TryDequeue(out var audioData))
+            {
+                // Create the AudioClip on the main thread
+                AudioClip newClip = AudioClip.Create("GeneratedAudioClip", audioData.Length, (int)_numChannels, (int)_sampleRate, false);
+                newClip.SetData(audioData, 0);
+
+                // Assign the AudioClip to the AudioSource
+                _audioSource2.clip = newClip;
+                _audioSource2.loop = true;
+                _audioSource2.volume = 0.1f;
+                _audioSource2.Play();
             }
         }
     }
