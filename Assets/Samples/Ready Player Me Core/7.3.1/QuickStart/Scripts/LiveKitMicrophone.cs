@@ -5,9 +5,11 @@ using LiveKit;
 using LiveKit.Proto;
 using RoomOptions = LiveKit.RoomOptions;
 using System.Collections.Generic;
+using CandyCoded.env;
 
 public class LiveKitMicrophone : MonoBehaviour
 {
+    private string agentApiUrl;
     private string token;
     public AudioSource audioSource;
     public AudioStream _audioStream;
@@ -22,7 +24,12 @@ public class LiveKitMicrophone : MonoBehaviour
 
     IEnumerator Start()
     {
-        UnityWebRequest www = UnityWebRequest.Get("http://localhost:5000/getToken");
+        if (env.TryParseEnvironmentVariable("AGENT_API_URL", out string agentApiUrl))
+        {
+            agentApiUrl = agentApiUrl;
+        }
+
+        UnityWebRequest www = UnityWebRequest.Get(agentApiUrl + "/getToken");
         yield return www.SendWebRequest();
         
         if (www.result == UnityWebRequest.Result.Success)
